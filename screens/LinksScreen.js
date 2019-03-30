@@ -37,6 +37,7 @@ export default class LinksScreen extends React.Component {
     selectedField: "",
     modalVisible: false,
     place: {
+      _id: "",
       name: "",
       uri: "",
       notes: "",
@@ -152,23 +153,21 @@ export default class LinksScreen extends React.Component {
 
   revertPlaceState = () => {
     try {
-      this.setState({
-        place: [
-          {
-            name: "",
-            uri: "",
-            notes: "",
-            address: "",
-            openingHours: {
-              open: 0,
-              close: 0,
-              off: []
-            },
-            contact: "",
-            recommend: "Unknown"
-          }
-        ]
-      });
+      const place = {
+        _id: "",
+        name: "",
+        uri: "",
+        notes: "",
+        address: "",
+        openingHours: {
+          open: 0,
+          close: 0,
+          off: []
+        },
+        contact: "",
+        recommend: "Unknown"
+      };
+      this.setState({ place });
     } catch (err) {
       this.setState({ errorMessage: err.message });
     }
@@ -230,7 +229,7 @@ export default class LinksScreen extends React.Component {
     let fetchMethod = "PUT";
 
     const _id = this.state.place._id;
-    if (_id === undefined) {
+    if (_id === "") {
       fetchMethod = "POST";
       let copy = { ...this.state.place };
       delete copy._id;
@@ -450,9 +449,7 @@ export default class LinksScreen extends React.Component {
             <View style={{ marginTop: 20 }}>
               <View style={styles.modal}>
                 <Text style={styles.titleText}>
-                  {this.state.place._id === ""
-                    ? "Create An Entry"
-                    : "Edit An Entry"}
+                  {this.state.place._id ? "Edit An Entry" : "Create An Entry"}
                 </Text>
 
                 <View>
@@ -626,7 +623,6 @@ export default class LinksScreen extends React.Component {
                 <TouchableHighlight
                   onPress={() => {
                     this.setModalVisible(!this.state.modalVisible);
-                    this.revertPlaceState();
                   }}>
                   <Text style={styles.padTopAndBottom}>Close</Text>
                 </TouchableHighlight>
@@ -667,6 +663,7 @@ export default class LinksScreen extends React.Component {
             style={styles.buttonYellow}
             onPress={() => {
               this.setModalVisible(true);
+              this.revertPlaceState();
             }}>
             <Text style={styles.padTop}> Create New </Text>
           </TouchableHighlight>

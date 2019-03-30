@@ -94,7 +94,6 @@ export default class HomeScreen extends React.Component {
 
   _getPlacesAsync = async () => {
     try {
-      console.log("getting locations");
       let places = await fetch(
         "https://foodnotes-api.herokuapp.com/api/v1/places",
         {
@@ -135,7 +134,7 @@ export default class HomeScreen extends React.Component {
             }
           }
         );
-        console.log("changing location");
+
         const responseJson = await geocoords.json();
         if (
           !responseJson.results.length > 0 ||
@@ -184,10 +183,8 @@ export default class HomeScreen extends React.Component {
   };
 
   componentDidMount() {
-    console.log("component mounted");
     this._getLocationAsync();
     this._getPlacesAsync();
-    console.log(this.state.places);
   }
 
   render() {

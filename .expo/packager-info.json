@@ -2,8 +2,9 @@
   "devToolsPort": 19002,
   "expoServerPort": 19000,
   "packagerPort": 19001,
-  "packagerPid": 17716,
-  "expoServerNgrokUrl": "https://dk-imw.anonymous.makan.exp.direct",
-  "packagerNgrokUrl": "https://packager.dk-imw.anonymous.makan.exp.direct",
-  "ngrokPid": 5300
+  "packagerPid": 3840,
+  "expoServerNgrokUrl": "https://dk-imw.anonymous.foodnotes.exp.direct",
+  "packagerNgrokUrl": "https://packager.dk-imw.anonymous.foodnotes.exp.direct",
+  "ngrokPid": 9256,
+  "webpackServerPort": null
 }

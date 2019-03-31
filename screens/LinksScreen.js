@@ -32,12 +32,12 @@ export default class LinksScreen extends React.Component {
     errorMessage: "",
     disabled: true,
     places: [],
+    location: { latitude: 1.2834925, longitude: 103.8465903 },
     text: "",
     searchOption: "name",
     selectedField: "",
     modalVisible: false,
     place: {
-      _id: "",
       name: "",
       uri: "",
       notes: "",
@@ -96,10 +96,24 @@ export default class LinksScreen extends React.Component {
     }
   };
 
+  _getLocationAsync = async () => {
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    if (status !== "granted") {
+      this.setState({
+        errorMessage: "Permission to access location was denied"
+      });
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    this.setState({ location });
+  };
+
   _getPlacesAsync = async () => {
     try {
       let places = await fetch(
-        "https://foodnotes-api.herokuapp.com/api/v1/places",
+        `https://foodnotes-api.herokuapp.com/api/v1/places?location=${
+          this.state.location.latitude
+        }&location=${this.state.location.longitude}`,
         {
           method: "GET",
           headers: {
@@ -154,7 +168,6 @@ export default class LinksScreen extends React.Component {
   revertPlaceState = () => {
     try {
       const place = {
-        _id: "",
         name: "",
         uri: "",
         notes: "",
@@ -177,7 +190,7 @@ export default class LinksScreen extends React.Component {
     try {
       const _id = this.state.place._id;
       let place = await fetch(
-        `https://foodnotes-api.herokuapp.com/api/v1/places/${_id}`,
+        `https://foodnotes-api.herokuapp.com/api/v1/places/${_id ? _id : ""}`,
         {
           method: "DELETE",
           headers: {
@@ -229,11 +242,8 @@ export default class LinksScreen extends React.Component {
     let fetchMethod = "PUT";
 
     const _id = this.state.place._id;
-    if (_id === "") {
+    if (_id === undefined) {
       fetchMethod = "POST";
-      let copy = { ...this.state.place };
-      delete copy._id;
-      this.setState({ place: copy });
     }
 
     try {
@@ -286,6 +296,48 @@ export default class LinksScreen extends React.Component {
 
   handleSubmit = async () => {
     const { text, searchOption } = this.state;
+
+    const unitNoRegex = /#\d+-*\d+/g;
+    const countryRegex = /Singapore/i;
+    let newLocation = text.replace(unitNoRegex, "");
+    if (newLocation.search(countryRegex) === -1) {
+      newLocation = newLocation + ", Singapore";
+    }
+    if (searchOption === "location") {
+      try {
+        const geocoords = await fetch(
+          `https://api.opencagedata.com/geocode/v1/json?q=${newLocation}&key=bb189808d69341ac907c35d5dc7c3b7a`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json"
+            }
+          }
+        );
+
+        const responseJson = await geocoords.json();
+        if (
+          !responseJson.results.length > 0 ||
+          !responseJson.results[0].annotations.timezone.name ===
+            "Asia/Singapore"
+        ) {
+          throw new Error("No geo-coordinates found for address");
+        }
+        const place = responseJson.results[0];
+        this.setState({
+          location: {
+            latitude: place.geometry.lat,
+            longitude: place.geometry.lng
+          }
+        });
+        this._getPlacesAsync();
+        return;
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
     try {
       const places = await fetch(
         `https://foodnotes-api.herokuapp.com/api/v1/places?${searchOption}=${text}`,
@@ -639,6 +691,7 @@ export default class LinksScreen extends React.Component {
             }>
             <Picker.Item label="By Name" value="name" />
             <Picker.Item label="By Notes" value="notes" />
+            <Picker.Item label="By Location" value="location" />
           </Picker>
           <TextInput
             style={styles.calloutSearch}

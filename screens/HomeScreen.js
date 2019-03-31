@@ -1,15 +1,24 @@
 import React from "react";
-import { StyleSheet, Text, TextInput, View, Picker } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Picker,
+  Switch
+} from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { Location, Permissions, MapView } from "expo";
+import { Location, Permissions, MapView, Localization } from "expo";
 import { mapStyle } from "./MapStyle";
+
 export default class HomeScreen extends React.Component {
   state = {
     location: { latitude: 1.2834925, longitude: 103.8465903 },
     errorMessage: null,
     places: [],
     text: "",
-    searchOption: "name"
+    searchOption: "name",
+    showOnlyOpen: false
   };
 
   static navigationOptions = {
@@ -94,16 +103,24 @@ export default class HomeScreen extends React.Component {
 
   _getPlacesAsync = async () => {
     try {
-      let places = await fetch(
-        "https://foodnotes-api.herokuapp.com/api/v1/places",
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json"
-          }
+      let url = "https://foodnotes-api.herokuapp.com/api/v1/places";
+
+      if (this.state.showOnlyOpen === true) {
+        const timestring = "Mon Apr 01 2019 9:12:35";
+        //TO DO: Get timezone from device
+        // const timestring = new Date().toLocaleString("en-US", {
+        //   timeZone: "Asia/Singapore"
+        // });
+        url = `https://foodnotes-api.herokuapp.com/api/v1/places?time=${timestring}`;
+      }
+      console.log(url);
+      let places = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
         }
-      );
+      });
 
       let responseJson = await places.json();
 
@@ -114,6 +131,12 @@ export default class HomeScreen extends React.Component {
       });
     }
   };
+
+  handleShowOpen = async input => {
+    await this.setState({ showOnlyOpen: input });
+    this._getPlacesAsync();
+  };
+
   handleSubmit = async () => {
     const { text, searchOption } = this.state;
     const unitNoRegex = /#\d+-*\d+/g;
@@ -198,6 +221,20 @@ export default class HomeScreen extends React.Component {
             longitude: this.state.location.longitude,
             latitudeDelta: 0.007,
             longitudeDelta: 0.007
+          }}
+          onRegionChangeComplete={region => {
+            const { initialRegion } = {
+              latitude: this.state.location.latitude,
+              longitude: this.state.location.longitude,
+              latitudeDelta: 0.007,
+              longitudeDelta: 0.007
+            };
+
+            if (initialRegion && isEqual(initialRegion, region)) {
+              return;
+            }
+
+            this.setState({ initialRegion: region });
           }}>
           <MapView.Marker
             draggable
@@ -229,6 +266,11 @@ export default class HomeScreen extends React.Component {
               placeholder={"Search"}
             />
           </View>
+          <Text style={styles.switch}>Show Only Open: </Text>
+          <Switch
+            value={this.state.showOnlyOpen}
+            onValueChange={input => this.handleShowOpen(input)}
+          />
         </MapView.Callout>
       </View>
     );
@@ -366,5 +408,14 @@ const styles = StyleSheet.create({
     color: "rgba(96,100,109, 1)",
     lineHeight: 24,
     textAlign: "center"
+  },
+  switch: {
+    alignSelf: "flex-end",
+    justifyContent: "flex-end",
+    width: 200,
+    position: "relative",
+    top: 5,
+    left: 85,
+    color: "#3523bc"
   }
 });

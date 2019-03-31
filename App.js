@@ -30,6 +30,7 @@ export default class App extends React.Component {
   _loadResourcesAsync = async () => {
     return Promise.all([
       Asset.loadAsync([require("./assets/images/logo.png")]),
+      Asset.loadAsync([require("./assets/images/auth.png")]),
       Font.loadAsync({
         ...Icon.Ionicons.font,
         nunito: require("./assets/fonts/Nunito-Medium.ttf"),

@@ -8,12 +8,17 @@ import {
   Switch
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { Location, Permissions, MapView, Localization } from "expo";
+import { Location, Permissions, MapView } from "expo";
 import { mapStyle } from "./MapStyle";
 
 export default class HomeScreen extends React.Component {
   state = {
-    location: { latitude: 1.2834925, longitude: 103.8465903 },
+    location: {
+      latitude: 1.2834925,
+      longitude: 103.8465903,
+      latitudeDelta: 0.007,
+      longitudeDelta: 0.007
+    },
     errorMessage: null,
     places: [],
     text: "",
@@ -98,7 +103,14 @@ export default class HomeScreen extends React.Component {
     }
 
     let location = await Location.getCurrentPositionAsync({});
-    this.setState({ location });
+    const latitude = location.coords.latitude;
+    const longitude = location.coords.longitude;
+    const latitudeDelta = 0.007;
+    const longitudeDelta = 0.007;
+
+    await this.setState({
+      location: { latitude, longitude, latitudeDelta, longitudeDelta }
+    });
   };
 
   _getPlacesAsync = async () => {
@@ -106,14 +118,12 @@ export default class HomeScreen extends React.Component {
       let url = "https://foodnotes-api.herokuapp.com/api/v1/places";
 
       if (this.state.showOnlyOpen === true) {
-        const timestring = "Mon Apr 01 2019 9:12:35";
-        //TO DO: Get timezone from device
-        // const timestring = new Date().toLocaleString("en-US", {
-        //   timeZone: "Asia/Singapore"
-        // });
+        //TO DO: Get timezone from user's device
+        const timestring = new Date().toLocaleString("en-US", {
+          timeZone: "Asia/Singapore"
+        });
         url = `https://foodnotes-api.herokuapp.com/api/v1/places?time=${timestring}`;
       }
-      console.log(url);
       let places = await fetch(url, {
         method: "GET",
         headers: {
@@ -170,7 +180,9 @@ export default class HomeScreen extends React.Component {
         this.setState({
           location: {
             latitude: place.geometry.lat,
-            longitude: place.geometry.lng
+            longitude: place.geometry.lng,
+            latitudeDelta: 0.007,
+            longitudeDelta: 0.007
           }
         });
       } catch (error) {
@@ -205,8 +217,8 @@ export default class HomeScreen extends React.Component {
     }
   };
 
-  componentDidMount() {
-    this._getLocationAsync();
+  async componentDidMount() {
+    await this._getLocationAsync();
     this._getPlacesAsync();
   }
 
@@ -219,22 +231,20 @@ export default class HomeScreen extends React.Component {
           region={{
             latitude: this.state.location.latitude,
             longitude: this.state.location.longitude,
-            latitudeDelta: 0.007,
-            longitudeDelta: 0.007
+            latitudeDelta: this.state.location.latitudeDelta,
+            longitudeDelta: this.state.location.longitudeDelta
           }}
           onRegionChangeComplete={region => {
-            const { initialRegion } = {
+            const { currentRegion } = {
               latitude: this.state.location.latitude,
               longitude: this.state.location.longitude,
-              latitudeDelta: 0.007,
-              longitudeDelta: 0.007
+              latitudeDelta: this.state.location.latitudeDelta,
+              longitudeDelta: this.state.location.longitudeDelta
             };
 
-            if (initialRegion && isEqual(initialRegion, region)) {
+            if (currentRegion && isEqual(currentRegion, region)) {
               return;
             }
-
-            this.setState({ initialRegion: region });
           }}>
           <MapView.Marker
             draggable
@@ -296,10 +306,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 10,
-    marginLeft: 50,
+    marginLeft: 20,
     width: 300,
-    marginRight: 10,
-    marginTop: 50
+    marginRight: 20,
+    marginTop: 50,
+    alignItems: "center",
+    alignSelf: "center"
   },
   calloutSearch: {
     alignItems: "center",
@@ -321,9 +333,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingVertical: 10
-  },
-  endPadding: {
-    paddingRight: 10
   },
   card: {
     padding: 10,
@@ -365,49 +374,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "rgba(130,4,150, 0.9)"
-  },
-  ring: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(130,4,150, 0.3)",
-    position: "absolute",
-    borderWidth: 1,
-    borderColor: "rgba(130,4,150, 0.5)"
-  },
-  introText: {
-    marginBottom: 20,
-    color: "rgba(0,0,0,0.4)",
-    fontSize: 14,
-    lineHeight: 19,
-    textAlign: "center"
-  },
-  contentContainer: {
-    paddingTop: 30
-  },
-  welcomeContainer: {
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20
-  },
-  welcomeImage: {
-    width: 200,
-    resizeMode: "contain",
-    marginTop: 3,
-    marginLeft: -10
-  },
-  introContainer: {
-    alignItems: "center",
-    marginHorizontal: 50
-  },
-  homeScreenFilename: {
-    marginVertical: 7
-  },
-  introText: {
-    fontSize: 17,
-    color: "rgba(96,100,109, 1)",
-    lineHeight: 24,
-    textAlign: "center"
   },
   switch: {
     alignSelf: "flex-end",

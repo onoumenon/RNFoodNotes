@@ -4,7 +4,10 @@
     "slug": "FootNotes",
     "privacy": "public",
     "sdkVersion": "32.0.0",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -16,9 +19,13 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
-    }
+    },
+    "description": "Footnotes for food places\nA personal collection of food places I have tried or want to try,\nmade to learn react native and CRUD on my backend database.",
+    "githubUrl": "https://github.com/onoumenon/RNFoodNotes"
   }
 }

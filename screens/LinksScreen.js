@@ -12,6 +12,7 @@ import {
   TouchableOpacity
 } from "react-native";
 import { Container, Content, Card, CardItem, Body, Text } from "native-base";
+import { Location, Permissions } from "expo";
 import DateTimePicker from "react-native-modal-datetime-picker";
 import SectionedMultiSelect from "react-native-sectioned-multi-select";
 import { AntDesign } from "@expo/vector-icons";
@@ -22,6 +23,7 @@ import {
   convertTimeToNumber
 } from "./OpeningHoursHelper";
 
+//TO DO: Have a parent pass state props so code remains DRY
 export default class LinksScreen extends React.Component {
   static navigationOptions = {
     header: null
@@ -73,7 +75,8 @@ export default class LinksScreen extends React.Component {
     this.setState({ modalVisible: visible });
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    await this._getLocationAsync();
     this._getPlacesAsync();
   }
 
@@ -105,7 +108,9 @@ export default class LinksScreen extends React.Component {
     }
 
     let location = await Location.getCurrentPositionAsync({});
-    this.setState({ location });
+    let latitude = location.coords.latitude;
+    let longitude = location.coords.longitude;
+    await this.setState({ location: { latitude, longitude } });
   };
 
   _getPlacesAsync = async () => {
@@ -847,15 +852,16 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   calloutView: {
+    alignItems: "center",
+    alignSelf: "center",
     marginTop: 30,
-    marginLeft: 30,
     marginBottom: 10,
     flexDirection: "row",
     backgroundColor: "transparent",
     borderColor: "grey",
     borderWidth: 0.5,
     borderRadius: 10,
-    width: 350
+    width: 300
   },
   calloutSearch: {
     alignItems: "center",

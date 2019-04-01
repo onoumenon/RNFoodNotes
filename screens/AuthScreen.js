@@ -13,7 +13,6 @@ import {
   KeyboardAvoidingView
 } from "react-native";
 import * as Joi from "react-native-joi";
-import axios from "axios";
 
 export class SignInScreen extends React.Component {
   static navigationOptions = {
@@ -251,7 +250,10 @@ export class RegisterScreen extends React.Component {
       <ImageBackground
         source={require("../assets/images/auth.png")}
         style={{ width: "100%", height: "100%" }}>
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior="padding"
+          enabled>
           <View style={{ marginTop: 20 }}>
             <Image
               style={styles.image}
@@ -324,7 +326,7 @@ export class RegisterScreen extends React.Component {
               <Text style={styles.padTopAndBottom}>Log in instead</Text>
             </TouchableHighlight>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </ImageBackground>
     );
   }
@@ -346,7 +348,7 @@ export class RegisterScreen extends React.Component {
       await AsyncStorage.setItem("Bearer ", responseJson.token);
       this.props.navigation.navigate("App");
     } catch (error) {
-      alert(`${error.message} Please Try Again.`);
+      alert("Username exists. Please Try Again.");
     }
   };
 }

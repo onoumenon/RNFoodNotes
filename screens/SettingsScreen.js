@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  AsyncStorage,
-  TouchableHighlight,
-  StyleSheet,
-  View,
-  Text
-} from "react-native";
+import { TouchableHighlight, StyleSheet, View, Text } from "react-native";
+import { SecureStore } from "expo";
 
 export default class SettingsScreen extends React.Component {
   static navigationOptions = {
@@ -13,7 +8,7 @@ export default class SettingsScreen extends React.Component {
   };
 
   _signOutAsync = async () => {
-    await AsyncStorage.clear();
+    await SecureStore.deleteItemAsync("Bearer");
     this.props.navigation.navigate("Auth");
   };
 

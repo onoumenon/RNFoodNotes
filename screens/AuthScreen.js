@@ -1,7 +1,6 @@
 import React from "react";
 import {
   ActivityIndicator,
-  AsyncStorage,
   StatusBar,
   StyleSheet,
   View,
@@ -13,6 +12,7 @@ import {
   KeyboardAvoidingView
 } from "react-native";
 import * as Joi from "react-native-joi";
+import { SecureStore } from "expo";
 
 export class SignInScreen extends React.Component {
   static navigationOptions = {
@@ -168,7 +168,7 @@ export class SignInScreen extends React.Component {
       if (!responseJson) {
         throw new Error(responseJson);
       }
-      await AsyncStorage.setItem("Bearer ", responseJson.token);
+      await SecureStore.setItemAsync("Bearer", responseJson.token);
       this.props.navigation.navigate("App");
     } catch (error) {
       alert("Username/Password wrong. Please try again.");
@@ -345,7 +345,7 @@ export class RegisterScreen extends React.Component {
       if (!responseJson) {
         throw new Error(responseJson);
       }
-      await AsyncStorage.setItem("Bearer ", responseJson.token);
+      await SecureStore.setItemAsync("Bearer", responseJson.token);
       this.props.navigation.navigate("App");
     } catch (error) {
       alert("Username exists. Please Try Again.");
@@ -361,7 +361,7 @@ export class AuthLoadingScreen extends React.Component {
 
   // Fetch the token from storage then navigate to our appropriate place
   _bootstrapAsync = async () => {
-    const userToken = await AsyncStorage.getItem("userToken");
+    const userToken = await SecureStore.getItemAsync("Bearer");
 
     // This will switch to the App screen or Auth screen and this loading
     // screen will be unmounted and thrown away.

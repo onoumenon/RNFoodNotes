@@ -128,6 +128,7 @@ export class SignInScreen extends React.Component {
                 <TextInput
                   numberOfLines={1}
                   style={styles.text}
+                  secureTextEntry={true}
                   onChangeText={text => this.handleOnChange(text, "password")}
                   placeholder={"Password (min 8 characters)"}
                 />
@@ -305,6 +306,7 @@ export class RegisterScreen extends React.Component {
                 <TextInput
                   numberOfLines={1}
                   style={styles.text}
+                  secureTextEntry={true}
                   onChangeText={text => this.handleOnChange(text, "password")}
                   placeholder={"Password (min 8 characters)"}
                 />

@@ -134,6 +134,32 @@ export default class LinksScreen extends React.Component {
     }
   };
 
+  displayRecommendation = marker => {
+    if (marker.recommend === "Unknown") {
+      return (
+        <AntDesign
+          name="closecircle"
+          style={styles.icon}
+          size={20}
+          color="grey"
+        />
+      );
+    }
+    if (marker.recommend === "Yes") {
+      return (
+        <AntDesign
+          name="smile-circle"
+          style={styles.icon}
+          size={20}
+          color="orange"
+        />
+      );
+    } else
+      return (
+        <AntDesign name="frown" style={styles.icon} size={20} color="blue" />
+      );
+  };
+
   displayTime = fieldName => {
     let time = "Click Here";
     try {
@@ -405,42 +431,7 @@ export default class LinksScreen extends React.Component {
               }}>
               <Body>
                 <Text style={styles.titleText}>
-                  {marker.recommend === "Unknown" ? (
-                    <AntDesign
-                      name="closecircle"
-                      style={styles.icon}
-                      size={20}
-                      color="blue"
-                    />
-                  ) : (
-                    <AntDesign
-                      name="checkcircle"
-                      style={styles.icon}
-                      size={20}
-                      color="orange"
-                    />
-                  )}{" "}
-                  {marker.recommend === "Yes" ? (
-                    <AntDesign
-                      name="smile-circle"
-                      style={styles.icon}
-                      size={20}
-                      color="orange"
-                    />
-                  ) : (
-                    ""
-                  )}{" "}
-                  {marker.recommend === "No" ? (
-                    <AntDesign
-                      name="frown"
-                      style={styles.icon}
-                      size={20}
-                      color="blue"
-                    />
-                  ) : (
-                    ""
-                  )}{" "}
-                  {marker.name}
+                  {this.displayRecommendation(marker)} {marker.name}
                 </Text>
                 <Text style={styles.text}>Notes: {marker.notes}</Text>
                 <Text style={styles.text}>Address: {marker.address}</Text>

@@ -24,6 +24,7 @@ import {
   convertNumberToTime,
   convertTimeToNumber
 } from "./OpeningHoursHelper";
+import Context from "../Context";
 
 export default class LinksScreen extends React.Component {
   static navigationOptions = {
@@ -31,12 +32,10 @@ export default class LinksScreen extends React.Component {
   };
 
   state = {
-    displaySpinner: true,
     token: null,
     isDateTimePickerVisible: false,
     errorMessage: "",
     disabled: true,
-    places: [],
     location: { latitude: 1.2834925, longitude: 103.8465903 },
     text: "",
     searchOption: "name",
@@ -81,7 +80,6 @@ export default class LinksScreen extends React.Component {
   async componentDidMount() {
     try {
       await this._getTokenpAsync();
-      await this._getPlacesAsync();
     } catch (err) {
       alert(err.message);
     }
@@ -215,7 +213,7 @@ export default class LinksScreen extends React.Component {
     }
   };
 
-  deleteFunction = async () => {
+  deleteFunction = async _getPlacesAsync => {
     try {
       const _id = this.state.place._id;
       const bearer = this.state.token;
@@ -234,7 +232,7 @@ export default class LinksScreen extends React.Component {
       );
       let responseJson = await place.json();
       if (responseJson === "Success") {
-        this._getPlacesAsync();
+        _getPlacesAsync();
         alert("Place Successfully Deleted");
         this.setModalVisible(!this.state.modalVisible);
       }
@@ -246,7 +244,7 @@ export default class LinksScreen extends React.Component {
     }
   };
 
-  handleDelete = () => {
+  handleDelete = _getPlacesAsync => {
     Alert.alert(
       "Warning",
       "Are you sure you want to delete this place?",
@@ -258,19 +256,19 @@ export default class LinksScreen extends React.Component {
           },
           style: "cancel"
         },
-        { text: "OK", onPress: () => this.deleteFunction() }
+        { text: "OK", onPress: () => this.deleteFunction(_getPlacesAsync) }
       ],
       { cancelable: false }
     );
   };
 
-  handleEdit = async () => {
+  handleEdit = async _getPlacesAsync => {
     const errors = this.validateForm();
     const bearer = "Bearer " + this.state.token;
     if (errors) {
       alert(errors);
       this.revertPlaceState();
-      this._getPlacesAsync();
+      _getPlacesAsync();
       return;
     }
     let fetchMethod = "PUT";
@@ -302,7 +300,7 @@ export default class LinksScreen extends React.Component {
         throw new Error(responseJson);
       }
 
-      this._getPlacesAsync();
+      _getPlacesAsync();
       this.revertPlaceState();
       Alert.alert("Success", `Place successfully ${text}.`);
       this.setModalVisible(!this.state.modalVisible);
@@ -335,7 +333,6 @@ export default class LinksScreen extends React.Component {
 
   handleSubmit = async () => {
     const { text, searchOption } = this.state;
-
     const unitNoRegex = /#\d+-*\d+/g;
     const countryRegex = /Singapore/i;
     let newLocation = text.replace(unitNoRegex, "");
@@ -361,47 +358,20 @@ export default class LinksScreen extends React.Component {
           !responseJson.results[0].annotations.timezone.name ===
             "Asia/Singapore"
         ) {
-          throw new Error("No geo-coordinates found for address");
+          throw new Error("No place found for geocoords");
         }
         const place = responseJson.results[0];
         this.setState({
           location: {
             latitude: place.geometry.lat,
-            longitude: place.geometry.lng
+            longitude: place.geometry.lng,
+            latitudeDelta: 0.007,
+            longitudeDelta: 0.007
           }
         });
-        this._getPlacesAsync();
-        return;
       } catch (error) {
         alert(error.message);
       }
-    }
-
-    try {
-      const places = await fetch(
-        `https://foodnotes-api.herokuapp.com/api/v1/places?${searchOption}=${text}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json"
-          }
-        }
-      );
-      const responseJson = await places.json();
-      if (!responseJson) {
-        throw new Error("No places found");
-      }
-      if (!Array.isArray(responseJson)) {
-        const result = [];
-        result.push(responseJson);
-        this.setState({ places: result });
-      }
-      this.setState({ places: responseJson });
-    } catch (error) {
-      this.setState({
-        errorMessage: error.message
-      });
     }
   };
 
@@ -479,256 +449,279 @@ export default class LinksScreen extends React.Component {
   };
 
   render() {
-    return this.state.displaySpinner ? (
-      <ImageBackground
-        source={require("../assets/images/splash.png")}
-        style={[styles.horizontal, styles.container]}>
-        <ActivityIndicator
-          animating={this.state.displaySpinner}
-          size={100}
-          color="#ffce49"
-        />
-      </ImageBackground>
-    ) : (
-      <View style={styles.container}>
-        <DateTimePicker
-          mode="time"
-          isVisible={this.state.isDateTimePickerVisible}
-          onConfirm={this._handleDatePicked}
-          onCancel={this._hideDateTimePicker}
-        />
-        <Modal
-          transparent={false}
-          animationType="slide"
-          visible={this.state.modalVisible}
-          onRequestClose={() => {
-            alert("Modal has been closed.");
-          }}>
-          <ScrollView style={{ flex: 1, minHeight: "100%" }}>
-            <View style={{ marginTop: 20 }}>
-              <View style={styles.modal}>
-                <Text style={styles.titleText}>
-                  {this.state.place._id ? "Edit An Entry" : "Create An Entry"}
-                </Text>
-
-                <View>
-                  <Text
-                    style={
-                      this.state.error.name
-                        ? styles.formLabelRed
-                        : styles.formLabel
-                    }>
-                    {this.state.error.name
-                      ? `${this.state.error.name}`
-                      : "Name:"}
-                  </Text>
-                  <View
-                    style={
-                      this.state.error.name
-                        ? styles.formfieldRed
-                        : styles.formfield
-                    }>
-                    <TextInput
-                      numberOfLines={1}
-                      style={styles.text}
-                      autoCapitalize="words"
-                      defaultValue={this.state.place.name}
-                      onChangeText={text => this.handleOnChange(text, "name")}
-                      placeholder={"Name of Place"}
-                    />
-                  </View>
-                </View>
-
-                <View>
-                  <Text
-                    style={
-                      this.state.error.address
-                        ? styles.formLabelRed
-                        : styles.formLabel
-                    }>
-                    {this.state.error.address
-                      ? `${this.state.error.address}`
-                      : "Address:"}
-                  </Text>
-                  <View
-                    style={
-                      this.state.error.address
-                        ? styles.formfieldRed
-                        : styles.formfield
-                    }>
-                    <TextInput
-                      numberOfLines={1}
-                      style={styles.text}
-                      autoCapitalize="words"
-                      defaultValue={this.state.place.address}
-                      onChangeText={text =>
-                        this.handleOnChange(text, "address")
-                      }
-                      placeholder={"Address of Place"}
-                    />
-                  </View>
-                </View>
-
-                <View>
-                  <Text style={styles.formLabel}>Opening Time:</Text>
-                  <View style={styles.formfield}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        this.setState({ selectedField: "open" });
-                        this._showDateTimePicker();
-                      }}>
-                      <Text>Open Time Picker | {this.displayTime("open")}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                <View>
-                  <Text style={styles.formLabel}>Closing Time:</Text>
-                  <View style={styles.formfield}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        this.setState({ selectedField: "close" });
-                        this._showDateTimePicker();
-                      }}>
-                      <Text>
-                        Open Time Picker | {this.displayTime("close")}
+    return (
+      <Context.Consumer>
+        {({ places, displaySpinner, _getPlacesAsync, error }) =>
+          displaySpinner ? (
+            <ImageBackground
+              source={require("../assets/images/splash.png")}
+              style={[styles.horizontal, styles.container]}>
+              <ActivityIndicator
+                animating={this.state.displaySpinner}
+                size={100}
+                color="#ffce49"
+              />
+            </ImageBackground>
+          ) : (
+            <View style={styles.container}>
+              <DateTimePicker
+                mode="time"
+                isVisible={this.state.isDateTimePickerVisible}
+                onConfirm={this._handleDatePicked}
+                onCancel={this._hideDateTimePicker}
+              />
+              <Modal
+                transparent={false}
+                animationType="slide"
+                visible={this.state.modalVisible}
+                onRequestClose={() => {
+                  alert("Modal has been closed.");
+                }}>
+                <ScrollView style={{ flex: 1, minHeight: "100%" }}>
+                  <View style={{ marginTop: 20 }}>
+                    <View style={styles.modal}>
+                      <Text style={styles.titleText}>
+                        {this.state.place._id
+                          ? "Edit An Entry"
+                          : "Create An Entry"}
                       </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
 
-                <View>
-                  <Text style={styles.formLabel}>Days Off:</Text>
-                  <View style={styles.formfield}>
-                    <SectionedMultiSelect
-                      items={daysOff}
-                      uniqueKey="id"
-                      subKey="children"
-                      selectText="Choose Days Off"
-                      showDropDowns={true}
-                      readOnlyHeadings={true}
-                      onSelectedItemsChange={this.handleDaysChange}
-                      selectedItems={this.state.place.openingHours.off}
-                    />
-                  </View>
-                </View>
+                      <View>
+                        <Text
+                          style={
+                            this.state.error.name
+                              ? styles.formLabelRed
+                              : styles.formLabel
+                          }>
+                          {this.state.error.name
+                            ? `${this.state.error.name}`
+                            : "Name:"}
+                        </Text>
+                        <View
+                          style={
+                            this.state.error.name
+                              ? styles.formfieldRed
+                              : styles.formfield
+                          }>
+                          <TextInput
+                            numberOfLines={1}
+                            style={styles.text}
+                            autoCapitalize="words"
+                            defaultValue={this.state.place.name}
+                            onChangeText={text =>
+                              this.handleOnChange(text, "name")
+                            }
+                            placeholder={"Name of Place"}
+                          />
+                        </View>
+                      </View>
 
-                <View>
-                  <Text style={styles.formLabel}>Recommend?</Text>
-                  <View style={styles.formfield}>
-                    <Picker
-                      selectedValue={this.state.place.recommend}
-                      style={styles.formPicker}
-                      mode="dropdown"
-                      onValueChange={itemValue =>
-                        this.handleOnChange(itemValue, "recommend")
-                      }>
-                      <Picker.Item label="Yes" value="Yes" />
-                      <Picker.Item label="No" value="No" />
-                      <Picker.Item label="Not tried" value="Unknown" />
-                    </Picker>
-                  </View>
-                </View>
+                      <View>
+                        <Text
+                          style={
+                            this.state.error.address
+                              ? styles.formLabelRed
+                              : styles.formLabel
+                          }>
+                          {this.state.error.address
+                            ? `${this.state.error.address}`
+                            : "Address:"}
+                        </Text>
+                        <View
+                          style={
+                            this.state.error.address
+                              ? styles.formfieldRed
+                              : styles.formfield
+                          }>
+                          <TextInput
+                            numberOfLines={1}
+                            style={styles.text}
+                            autoCapitalize="words"
+                            defaultValue={this.state.place.address}
+                            onChangeText={text =>
+                              this.handleOnChange(text, "address")
+                            }
+                            placeholder={"Address of Place"}
+                          />
+                        </View>
+                      </View>
 
-                <View>
-                  <Text style={styles.formLabel}>Notes:</Text>
-                  <View style={styles.formfield}>
-                    <TextInput
-                      numberOfLines={2}
-                      autoCapitalize="words"
-                      style={styles.text}
-                      defaultValue={this.state.place.notes}
-                      onChangeText={text => this.handleOnChange(text, "notes")}
-                      placeholder={"Write Your Notes Here"}
-                    />
-                  </View>
-                </View>
+                      <View>
+                        <Text style={styles.formLabel}>Opening Time:</Text>
+                        <View style={styles.formfield}>
+                          <TouchableOpacity
+                            onPress={() => {
+                              this.setState({ selectedField: "open" });
+                              this._showDateTimePicker();
+                            }}>
+                            <Text>
+                              Open Time Picker | {this.displayTime("open")}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
 
-                <View>
-                  <Text style={styles.formLabel}>Image:</Text>
-                  <View style={styles.formfield}>
-                    <TextInput
-                      numberOfLines={1}
-                      style={styles.text}
-                      defaultValue={this.state.place.uri}
-                      onChangeText={text => this.handleOnChange(text, "uri")}
-                      placeholder={"Image Url"}
-                    />
+                      <View>
+                        <Text style={styles.formLabel}>Closing Time:</Text>
+                        <View style={styles.formfield}>
+                          <TouchableOpacity
+                            onPress={() => {
+                              this.setState({ selectedField: "close" });
+                              this._showDateTimePicker();
+                            }}>
+                            <Text>
+                              Open Time Picker | {this.displayTime("close")}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      <View>
+                        <Text style={styles.formLabel}>Days Off:</Text>
+                        <View style={styles.formfield}>
+                          <SectionedMultiSelect
+                            items={daysOff}
+                            uniqueKey="id"
+                            subKey="children"
+                            selectText="Choose Days Off"
+                            showDropDowns={true}
+                            readOnlyHeadings={true}
+                            onSelectedItemsChange={this.handleDaysChange}
+                            selectedItems={this.state.place.openingHours.off}
+                          />
+                        </View>
+                      </View>
+
+                      <View>
+                        <Text style={styles.formLabel}>Recommend?</Text>
+                        <View style={styles.formfield}>
+                          <Picker
+                            selectedValue={this.state.place.recommend}
+                            style={styles.formPicker}
+                            mode="dropdown"
+                            onValueChange={itemValue =>
+                              this.handleOnChange(itemValue, "recommend")
+                            }>
+                            <Picker.Item label="Yes" value="Yes" />
+                            <Picker.Item label="No" value="No" />
+                            <Picker.Item label="Not tried" value="Unknown" />
+                          </Picker>
+                        </View>
+                      </View>
+
+                      <View>
+                        <Text style={styles.formLabel}>Notes:</Text>
+                        <View style={styles.formfield}>
+                          <TextInput
+                            numberOfLines={2}
+                            autoCapitalize="words"
+                            style={styles.text}
+                            defaultValue={this.state.place.notes}
+                            onChangeText={text =>
+                              this.handleOnChange(text, "notes")
+                            }
+                            placeholder={"Write Your Notes Here"}
+                          />
+                        </View>
+                      </View>
+
+                      <View>
+                        <Text style={styles.formLabel}>Image:</Text>
+                        <View style={styles.formfield}>
+                          <TextInput
+                            numberOfLines={1}
+                            style={styles.text}
+                            defaultValue={this.state.place.uri}
+                            onChangeText={text =>
+                              this.handleOnChange(text, "uri")
+                            }
+                            placeholder={"Image Url"}
+                          />
+                        </View>
+                      </View>
+                      <View style={{ marginTop: 10 }}>
+                        <TouchableHighlight
+                          disabled={this.state.disabled}
+                          style={
+                            this.state.disabled
+                              ? styles.buttonDisabled
+                              : styles.buttonYellow
+                          }
+                          onPress={() => {
+                            this.handleEdit(_getPlacesAsync);
+                          }}>
+                          <Text style={styles.padTop}> Submit </Text>
+                        </TouchableHighlight>
+                        {this.state.place._id ? (
+                          <TouchableHighlight
+                            style={styles.buttonRed}
+                            onPress={() => {
+                              this.handleDelete(_getPlacesAsync);
+                            }}>
+                            <Text style={styles.padTop}> Delete </Text>
+                          </TouchableHighlight>
+                        ) : null}
+                      </View>
+                      <TouchableHighlight
+                        onPress={() => {
+                          this.setModalVisible(!this.state.modalVisible);
+                        }}>
+                        <Text style={styles.padTopAndBottom}>Close</Text>
+                      </TouchableHighlight>
+                    </View>
                   </View>
-                </View>
-                <View style={{ marginTop: 10 }}>
-                  <TouchableHighlight
-                    disabled={this.state.disabled}
-                    style={
-                      this.state.disabled
-                        ? styles.buttonDisabled
-                        : styles.buttonYellow
-                    }
-                    onPress={() => {
-                      this.handleEdit();
-                    }}>
-                    <Text style={styles.padTop}> Submit </Text>
-                  </TouchableHighlight>
-                  {this.state.place._id ? (
-                    <TouchableHighlight
-                      style={styles.buttonRed}
-                      onPress={() => {
-                        this.handleDelete();
-                      }}>
-                      <Text style={styles.padTop}> Delete </Text>
-                    </TouchableHighlight>
-                  ) : null}
-                </View>
+                </ScrollView>
+              </Modal>
+              <View style={styles.calloutView}>
+                <Picker
+                  selectedValue={this.state.searchOption}
+                  style={styles.picker}
+                  onValueChange={itemValue =>
+                    this.setState({ searchOption: itemValue })
+                  }>
+                  <Picker.Item label="By Name" value="name" />
+                  <Picker.Item label="By Notes" value="notes" />
+                  <Picker.Item label="By Location" value="location" />
+                </Picker>
+                <TextInput
+                  style={styles.calloutSearch}
+                  onSubmitEditing={async () => {
+                    await this.handleSubmit();
+                    _getPlacesAsync(
+                      this.state.showOnlyOpen,
+                      this.state.searchOption,
+                      this.state.text
+                    );
+                  }}
+                  onChangeText={text => this.setState({ text })}
+                  placeholderTextColor="orange"
+                  placeholder={"Search"}
+                />
+              </View>
+
+              <Container style={styles.card}>
+                <Content>
+                  <ScrollView style={{ flex: 1, minHeight: "100%" }}>
+                    {this.populateList(places)}
+                  </ScrollView>
+                </Content>
+              </Container>
+
+              <View style={styles.footerView}>
+                <Text>{this.state.errorMessage}</Text>
                 <TouchableHighlight
+                  style={styles.buttonYellow}
                   onPress={() => {
-                    this.setModalVisible(!this.state.modalVisible);
+                    this.setModalVisible(true);
+                    this.revertPlaceState();
                   }}>
-                  <Text style={styles.padTopAndBottom}>Close</Text>
+                  <Text style={styles.padTop}> Create New </Text>
                 </TouchableHighlight>
               </View>
             </View>
-          </ScrollView>
-        </Modal>
-        <View style={styles.calloutView}>
-          <Picker
-            selectedValue={this.state.searchOption}
-            style={styles.picker}
-            onValueChange={itemValue =>
-              this.setState({ searchOption: itemValue })
-            }>
-            <Picker.Item label="By Name" value="name" />
-            <Picker.Item label="By Notes" value="notes" />
-            <Picker.Item label="By Location" value="location" />
-          </Picker>
-          <TextInput
-            style={styles.calloutSearch}
-            onSubmitEditing={this.handleSubmit}
-            onChangeText={text => this.setState({ text })}
-            placeholderTextColor="orange"
-            placeholder={"Search"}
-          />
-        </View>
-
-        <Container style={styles.card}>
-          <Content>
-            <ScrollView style={{ flex: 1, minHeight: "100%" }}>
-              {this.populateList(this.state.places)}
-            </ScrollView>
-          </Content>
-        </Container>
-
-        <View style={styles.footerView}>
-          <Text>{this.state.errorMessage}</Text>
-          <TouchableHighlight
-            style={styles.buttonYellow}
-            onPress={() => {
-              this.setModalVisible(true);
-              this.revertPlaceState();
-            }}>
-            <Text style={styles.padTop}> Create New </Text>
-          </TouchableHighlight>
-        </View>
-      </View>
+          )
+        }
+      </Context.Consumer>
     );
   }
 }

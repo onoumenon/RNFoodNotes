@@ -2,9 +2,9 @@
   "devToolsPort": 19002,
   "expoServerPort": 19000,
   "packagerPort": 19001,
-  "packagerPid": 15940,
-  "expoServerNgrokUrl": null,
-  "packagerNgrokUrl": null,
-  "ngrokPid": null,
+  "packagerPid": 10780,
+  "expoServerNgrokUrl": "https://8m-qah.huitian.foodnotes.exp.direct",
+  "packagerNgrokUrl": "https://packager.8m-qah.huitian.foodnotes.exp.direct",
+  "ngrokPid": 1880,
   "webpackServerPort": null
 }

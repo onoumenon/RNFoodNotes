@@ -16,16 +16,16 @@
 
 - ✅ Splash Screen
 - ✅ Authentication Loading (fetch token from storage and redirect if exist)
-- 🛠 Loading spinner on slow fetch calls (Login/Register, Fetch Map Markers, Fetch Food Places)
-- 🛠 Verify Token before redirect
-- 🛠 Redux/ Hoist State for better state control
+- ✅ Loading spinner on slow fetch calls (Login/Register, Fetch Map Markers, Fetch Food Places)
+- ✅ Verify Token for protected (POST/ DELETE/ PUT) routes
+- 🛠 Implement React Context
 
 ##### User Authentication (If token is found in AsyncStorage, skip to App)
 
 - ✅ Register (linked to backend)
 - ✅ Log In (linked to backend)
 - ✅ Error Messages on Error (eg: username exists)
-- 🛠 Password hidden on typing
+- ✅ Password hidden on typing
 - 🛠 Password Match field ❔ (Joi schema)
 
 ##### HomeScreen
@@ -33,6 +33,7 @@
 - ✅ Responsive Map (user can zoom or pan, and can change pin location)
 - ✅ Map Style
 - ✅ Search Implementation (By Name, Notes and Location)
+- ✅ Get correct time by timezone (SG, delegated to backend)
 - 🛠 Get Timezone by device/ user settings
 - 🛠 Different colors for open/ close markers
 - 🛠 Show OP/CL times for marker
@@ -67,23 +68,28 @@
 - ✅ Create User
 - ✅ Sign In
 - ✅ Verify Token
-- 🔲 use VerifyToken on certain routes
+- ✅ use VerifyToken on certain routes
 - 🛠 Change User Model, link to Places
 - 🛠 Delete User
 
 ##### Tests
+
+##### (Backend)
 
 - ✅ Get Place (By Name, Notes, All)
 - ✅ Post Place (No Name Dups)
 - ✅ Put Place by ID (Patch Implementation)
 - ✅ Delete Place by ID
 - ✅ Verify Token
-- 🔲 All the other implementations of GET Place
 - 🛠 Ensure Geocoords is saved in POST Place
 - 🛠 Create User
 - 🛠 Sign In
 - 🛠 TDD future features
 
+##### (Frontend)
+
+- 🛠 Learn how to TDD in react native
+
 ##### CI
 
-- 🛠 Implement Circles CI or Travis
+- ✅ Implement Circles CI on Back End

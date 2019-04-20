@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   View,
@@ -9,10 +10,11 @@ import {
   Modal,
   TouchableHighlight,
   Alert,
+  ImageBackground,
   TouchableOpacity
 } from "react-native";
 import { Container, Content, Card, CardItem, Body, Text } from "native-base";
-import { Location, Permissions } from "expo";
+import { SecureStore } from "expo";
 import DateTimePicker from "react-native-modal-datetime-picker";
 import SectionedMultiSelect from "react-native-sectioned-multi-select";
 import { AntDesign } from "@expo/vector-icons";
@@ -23,13 +25,14 @@ import {
   convertTimeToNumber
 } from "./OpeningHoursHelper";
 
-//TO DO: Have a parent pass state props so code remains DRY
 export default class LinksScreen extends React.Component {
   static navigationOptions = {
     header: null
   };
 
   state = {
+    displaySpinner: true,
+    token: null,
     isDateTimePickerVisible: false,
     errorMessage: "",
     disabled: true,
@@ -76,8 +79,12 @@ export default class LinksScreen extends React.Component {
   }
 
   async componentDidMount() {
-    await this._getLocationAsync();
-    this._getPlacesAsync();
+    try {
+      await this._getTokenpAsync();
+      await this._getPlacesAsync();
+    } catch (err) {
+      alert(err.message);
+    }
   }
 
   _showDateTimePicker = () => this.setState({ isDateTimePickerVisible: true });
@@ -99,18 +106,9 @@ export default class LinksScreen extends React.Component {
     }
   };
 
-  _getLocationAsync = async () => {
-    let { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status !== "granted") {
-      this.setState({
-        errorMessage: "Permission to access location was denied"
-      });
-    }
-
-    let location = await Location.getCurrentPositionAsync({});
-    let latitude = location.coords.latitude;
-    let longitude = location.coords.longitude;
-    await this.setState({ location: { latitude, longitude } });
+  _getTokenpAsync = async () => {
+    const token = await SecureStore.getItemAsync("Bearer");
+    this.setState({ token });
   };
 
   _getPlacesAsync = async () => {
@@ -128,7 +126,7 @@ export default class LinksScreen extends React.Component {
         }
       );
       let responseJson = await places.json();
-      this.setState({ places: responseJson });
+      this.setState({ places: responseJson, displaySpinner: false });
     } catch (error) {
       this.setState({
         errorMessage: error.message
@@ -194,12 +192,16 @@ export default class LinksScreen extends React.Component {
   deleteFunction = async () => {
     try {
       const _id = this.state.place._id;
+      const bearer = this.state.token;
       let place = await fetch(
         `https://foodnotes-api.herokuapp.com/api/v1/places/${_id ? _id : ""}`,
         {
           method: "DELETE",
+          withCredentials: true,
+          credentials: "include",
           headers: {
             Accept: "application/json",
+            Authorization: bearer,
             "Content-Type": "application/json"
           }
         }
@@ -238,6 +240,7 @@ export default class LinksScreen extends React.Component {
 
   handleEdit = async () => {
     const errors = this.validateForm();
+    const bearer = "Bearer " + this.state.token;
     if (errors) {
       alert(errors);
       this.revertPlaceState();
@@ -256,8 +259,11 @@ export default class LinksScreen extends React.Component {
         `https://foodnotes-api.herokuapp.com/api/v1/places/${_id ? _id : ""}`,
         {
           method: fetchMethod,
+          withCredentials: true,
+          credentials: "include",
           headers: {
             Accept: "application/json",
+            Authorization: bearer,
             "Content-Type": "application/json"
           },
           body: JSON.stringify(this.state.place)
@@ -480,13 +486,18 @@ export default class LinksScreen extends React.Component {
   };
 
   render() {
-    let text = "Waiting..";
-    if (this.state.errorMessage) {
-      text = this.state.errorMessage;
-    } else if (this.state.error) {
-      text = JSON.stringify(this.state.error);
-    }
-    return (
+    return this.state.displaySpinner ? (
+      <ImageBackground
+        source={require("../assets/images/splash.png")}
+        style={[styles.horizontal, styles.container]}>
+        <ActivityIndicator
+          style={styles.spinner}
+          animating={this.state.displaySpinner}
+          size={100}
+          color="#ffce49"
+        />
+      </ImageBackground>
+    ) : (
       <View style={styles.container}>
         <DateTimePicker
           mode="time"
@@ -494,7 +505,6 @@ export default class LinksScreen extends React.Component {
           onConfirm={this._handleDatePicked}
           onCancel={this._hideDateTimePicker}
         />
-
         <Modal
           transparent={false}
           animationType="slide"
@@ -735,8 +745,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 10,
-    backgroundColor: "#fff",
     justifyContent: "center"
+  },
+  horizontal: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    padding: 10,
+    backgroundColor: "#ffce49"
   },
   formLabel: {
     position: "relative",
@@ -815,8 +830,8 @@ const styles = StyleSheet.create({
     maxWidth: 300
   },
   icon: {
-    paddingLeft: 20,
-    paddingRight: 20
+    marginLeft: 20,
+    marginRight: 20
   },
   card: {
     width: "90%",

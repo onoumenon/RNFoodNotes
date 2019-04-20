@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +20,7 @@ export default class HomeScreen extends React.Component {
       latitudeDelta: 0.007,
       longitudeDelta: 0.007
     },
+    displaySpinner: true,
     errorMessage: null,
     places: [],
     text: "",
@@ -281,6 +283,12 @@ export default class HomeScreen extends React.Component {
             value={this.state.showOnlyOpen}
             onValueChange={input => this.handleShowOpen(input)}
           />
+          <ActivityIndicator
+            style={styles.spinner}
+            animating={this.state.displaySpinner}
+            size={100}
+            color="#0000ff"
+          />
         </MapView.Callout>
       </View>
     );
@@ -290,40 +298,49 @@ export default class HomeScreen extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffcc00"
+    flexDirection: "row",
+    backgroundColor: "#ffcc00",
+    justifyContent: "center"
   },
-  text: { fontSize: 15 },
+  text: {
+    fontSize: 15,
+    flexWrap: "wrap",
+    flex: 1,
+    maxWidth: 300
+  },
   titleText: {
     fontSize: 20,
     fontWeight: "bold",
     maxWidth: 300
   },
   icon: {
-    paddingLeft: 20,
-    paddingRight: 20
+    marginLeft: 20,
+    marginRight: 20
+  },
+  spinner: {
+    paddingTop: 150
   },
   calloutView: {
     flexDirection: "row",
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 10,
-    marginLeft: 20,
     width: 300,
-    marginRight: 20,
     marginTop: 50,
-    alignItems: "center",
-    alignSelf: "center"
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center"
   },
   calloutSearch: {
-    alignItems: "center",
     alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
     borderColor: "transparent",
-    marginLeft: 10,
     width: 300,
-    marginRight: 10,
     height: 40,
     borderWidth: 0.0
   },
   picker: {
+    marginLeft: 30,
     width: 50,
     height: 40
   },
@@ -353,8 +370,10 @@ const styles = StyleSheet.create({
     height: "100%",
     alignSelf: "center"
   },
-  textContent: {
-    flex: 1
+  image: {
+    width: 350,
+    height: 350,
+    alignSelf: "center"
   },
   cardtitle: {
     fontSize: 12,

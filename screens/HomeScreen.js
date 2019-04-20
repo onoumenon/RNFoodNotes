@@ -90,9 +90,7 @@ export default class HomeScreen extends React.Component {
   _getLocationAsync = async () => {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status !== "granted") {
-      this.setState({
-        errorMessage: "Permission to access location was denied"
-      });
+      throw new Error("Location Permissions not granted.");
     }
 
     let location = await Location.getCurrentPositionAsync({});
@@ -101,43 +99,37 @@ export default class HomeScreen extends React.Component {
     const latitudeDelta = 0.007;
     const longitudeDelta = 0.007;
 
-    await this.setState({
+    this.setState({
       location: { latitude, longitude, latitudeDelta, longitudeDelta }
     });
   };
 
   _getPlacesAsync = async () => {
-    try {
-      let url = "https://foodnotes-api.herokuapp.com/api/v1/places";
+    let url = "https://foodnotes-api.herokuapp.com/api/v1/places";
 
-      if (this.state.showOnlyOpen === true) {
-        //TO DO: Get timezone from user's device
-        const timestring = new Date().toLocaleString("en-US", {
-          timeZone: "Asia/Singapore"
-        });
-        url = `https://foodnotes-api.herokuapp.com/api/v1/places?time=${timestring}`;
-      }
-      let places = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        }
-      });
-
-      let responseJson = await places.json();
-
-      this.setState({ places: responseJson });
-    } catch (error) {
-      this.setState({
-        errorMessage: error.message
-      });
+    if (this.state.showOnlyOpen === true) {
+      url = "https://foodnotes-api.herokuapp.com/api/v1/places?time=now";
     }
+    let places = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+
+    let responseJson = await places.json();
+
+    this.setState({ places: responseJson, displaySpinner: false });
   };
 
   handleShowOpen = async input => {
-    await this.setState({ showOnlyOpen: input });
-    this._getPlacesAsync();
+    try {
+      await this.setState({ showOnlyOpen: input });
+      await this._getPlacesAsync();
+    } catch (err) {
+      this.setState({ errorMessage: err.message });
+    }
   };
 
   handleSubmit = async () => {
@@ -211,8 +203,12 @@ export default class HomeScreen extends React.Component {
   };
 
   async componentDidMount() {
-    await this._getLocationAsync();
-    this._getPlacesAsync();
+    try {
+      await this._getPlacesAsync();
+      await this._getLocationAsync();
+    } catch (error) {
+      this.setState({ errorMessage: error.message });
+    }
   }
 
   render() {

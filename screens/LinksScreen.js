@@ -274,10 +274,12 @@ export default class LinksScreen extends React.Component {
       return;
     }
     let fetchMethod = "PUT";
+    let text = "edited";
 
     const _id = this.state.place._id;
     if (_id === undefined) {
       fetchMethod = "POST";
+      text = "added";
     }
 
     try {
@@ -302,7 +304,7 @@ export default class LinksScreen extends React.Component {
 
       this._getPlacesAsync();
       this.revertPlaceState();
-      alert("Success!");
+      Alert.alert("Success", `Place successfully ${text}.`);
       this.setModalVisible(!this.state.modalVisible);
     } catch (error) {
       this.setState({

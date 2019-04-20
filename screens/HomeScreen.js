@@ -1,6 +1,7 @@
 import React from "react";
 import {
   ActivityIndicator,
+  ImageBackground,
   StyleSheet,
   Text,
   TextInput,
@@ -11,6 +12,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { Location, Permissions, MapView } from "expo";
 import { mapStyle } from "./MapStyle";
+import Context from "../Context";
 
 export default class HomeScreen extends React.Component {
   state = {
@@ -20,9 +22,7 @@ export default class HomeScreen extends React.Component {
       latitudeDelta: 0.007,
       longitudeDelta: 0.007
     },
-    displaySpinner: true,
     errorMessage: null,
-    places: [],
     text: "",
     searchOption: "name",
     showOnlyOpen: false
@@ -104,34 +104,6 @@ export default class HomeScreen extends React.Component {
     });
   };
 
-  _getPlacesAsync = async () => {
-    let url = "https://foodnotes-api.herokuapp.com/api/v1/places";
-
-    if (this.state.showOnlyOpen === true) {
-      url = "https://foodnotes-api.herokuapp.com/api/v1/places?time=now";
-    }
-    let places = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-
-    let responseJson = await places.json();
-
-    this.setState({ places: responseJson, displaySpinner: false });
-  };
-
-  handleShowOpen = async input => {
-    try {
-      await this.setState({ showOnlyOpen: input });
-      await this._getPlacesAsync();
-    } catch (err) {
-      this.setState({ errorMessage: err.message });
-    }
-  };
-
   handleSubmit = async () => {
     const { text, searchOption } = this.state;
     const unitNoRegex = /#\d+-*\d+/g;
@@ -174,37 +146,10 @@ export default class HomeScreen extends React.Component {
         alert(error.message);
       }
     }
-    try {
-      const places = await fetch(
-        `https://foodnotes-api.herokuapp.com/api/v1/places?${searchOption}=${text}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json"
-          }
-        }
-      );
-      const responseJson = await places.json();
-      if (!responseJson) {
-        throw new Error("No places found");
-      }
-      if (!Array.isArray(responseJson)) {
-        const result = [];
-        result.push(responseJson);
-        this.setState({ places: result });
-      }
-      this.setState({ places: responseJson });
-    } catch (error) {
-      this.setState({
-        errorMessage: error.message
-      });
-    }
   };
 
   async componentDidMount() {
     try {
-      await this._getPlacesAsync();
       await this._getLocationAsync();
     } catch (error) {
       this.setState({ errorMessage: error.message });
@@ -213,71 +158,92 @@ export default class HomeScreen extends React.Component {
 
   render() {
     return (
-      <View style={styles.container}>
-        <MapView
-          style={{ flex: 1 }}
-          customMapStyle={mapStyle}
-          region={{
-            latitude: this.state.location.latitude,
-            longitude: this.state.location.longitude,
-            latitudeDelta: this.state.location.latitudeDelta,
-            longitudeDelta: this.state.location.longitudeDelta
-          }}
-          onRegionChangeComplete={region => {
-            const { currentRegion } = {
-              latitude: this.state.location.latitude,
-              longitude: this.state.location.longitude,
-              latitudeDelta: this.state.location.latitudeDelta,
-              longitudeDelta: this.state.location.longitudeDelta
-            };
+      <Context.Consumer>
+        {({ places, displaySpinner, _getPlacesAsync, error }) =>
+          displaySpinner ? (
+            <ImageBackground
+              source={require("../assets/images/splash.png")}
+              style={[styles.horizontal, styles.container]}>
+              <ActivityIndicator
+                animating={this.state.displaySpinner}
+                size={100}
+                color="#ffce49"
+              />
+            </ImageBackground>
+          ) : (
+            <View style={styles.container}>
+              {error ? alert(error) : null}
+              <MapView
+                style={{ flex: 1 }}
+                customMapStyle={mapStyle}
+                region={{
+                  latitude: this.state.location.latitude,
+                  longitude: this.state.location.longitude,
+                  latitudeDelta: this.state.location.latitudeDelta,
+                  longitudeDelta: this.state.location.longitudeDelta
+                }}
+                onRegionChangeComplete={region => {
+                  const { currentRegion } = {
+                    latitude: this.state.location.latitude,
+                    longitude: this.state.location.longitude,
+                    latitudeDelta: this.state.location.latitudeDelta,
+                    longitudeDelta: this.state.location.longitudeDelta
+                  };
 
-            if (currentRegion && isEqual(currentRegion, region)) {
-              return;
-            }
-          }}>
-          <MapView.Marker
-            draggable
-            coordinate={this.state.location}
-            pinColor="orange"
-            title="LOCATION"
-            onDragEnd={e =>
-              this.setState({ location: e.nativeEvent.coordinate })
-            }
-          />
-          {this.populateMarkers(this.state.places)}
-        </MapView>
-        <MapView.Callout>
-          <View style={styles.calloutView}>
-            <Picker
-              selectedValue={this.state.searchOption}
-              style={styles.picker}
-              onValueChange={itemValue =>
-                this.setState({ searchOption: itemValue })
-              }>
-              <Picker.Item label="By Name" value="name" />
-              <Picker.Item label="By Notes" value="notes" />
-              <Picker.Item label="Change Location" value="location" />
-            </Picker>
-            <TextInput
-              style={styles.calloutSearch}
-              onSubmitEditing={this.handleSubmit}
-              onChangeText={text => this.setState({ text })}
-              placeholder={"Search"}
-            />
-          </View>
-          <Text style={styles.switch}>Show Only Open: </Text>
-          <Switch
-            value={this.state.showOnlyOpen}
-            onValueChange={input => this.handleShowOpen(input)}
-          />
-          <ActivityIndicator
-            style={styles.spinner}
-            animating={this.state.displaySpinner}
-            size={100}
-            color="#0000ff"
-          />
-        </MapView.Callout>
-      </View>
+                  if (currentRegion && isEqual(currentRegion, region)) {
+                    return;
+                  }
+                }}>
+                <MapView.Marker
+                  draggable
+                  coordinate={this.state.location}
+                  pinColor="orange"
+                  title="LOCATION"
+                  onDragEnd={e =>
+                    this.setState({ location: e.nativeEvent.coordinate })
+                  }
+                />
+                {this.populateMarkers(places)}
+              </MapView>
+              <MapView.Callout>
+                <View style={styles.calloutView}>
+                  <Picker
+                    selectedValue={this.state.searchOption}
+                    style={styles.picker}
+                    onValueChange={itemValue =>
+                      this.setState({ searchOption: itemValue })
+                    }>
+                    <Picker.Item label="By Name" value="name" />
+                    <Picker.Item label="By Notes" value="notes" />
+                    <Picker.Item label="Change Location" value="location" />
+                  </Picker>
+                  <TextInput
+                    style={styles.calloutSearch}
+                    onSubmitEditing={async () => {
+                      await this.handleSubmit();
+                      _getPlacesAsync(
+                        this.state.showOnlyOpen,
+                        this.state.searchOption,
+                        this.state.text
+                      );
+                    }}
+                    onChangeText={text => this.setState({ text })}
+                    placeholder={"Search"}
+                  />
+                </View>
+                <Text style={styles.switch}>Show Only Open: </Text>
+                <Switch
+                  value={this.state.showOnlyOpen}
+                  onValueChange={async input => {
+                    this.setState({ showOnlyOpen: input });
+                    await _getPlacesAsync(input);
+                  }}
+                />
+              </MapView.Callout>
+            </View>
+          )
+        }
+      </Context.Consumer>
     );
   }
 }
@@ -288,6 +254,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#ffcc00",
     justifyContent: "center"
+  },
+  horizontal: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    padding: 10,
+    backgroundColor: "#ffce49"
   },
   text: {
     fontSize: 15,
@@ -303,9 +275,6 @@ const styles = StyleSheet.create({
   icon: {
     marginLeft: 20,
     marginRight: 20
-  },
-  spinner: {
-    paddingTop: 150
   },
   calloutView: {
     flexDirection: "row",

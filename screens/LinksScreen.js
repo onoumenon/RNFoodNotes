@@ -484,7 +484,6 @@ export default class LinksScreen extends React.Component {
         source={require("../assets/images/splash.png")}
         style={[styles.horizontal, styles.container]}>
         <ActivityIndicator
-          style={styles.spinner}
           animating={this.state.displaySpinner}
           size={100}
           color="#ffce49"
